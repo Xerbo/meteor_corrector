@@ -9,8 +9,8 @@ from scipy.interpolate import interp1d
 
 # Satellite paramaters, in kilometres
 EARTH_RADIUS = 6371
-SAT_HEIGHT = 822
-SWATH = 3200
+SAT_HEIGHT = 820
+SWATH = 3050  # TODO: why does 2800km not work properly?
 
 
 VIEW_ANGLE = (SWATH / EARTH_RADIUS) * 2
@@ -38,8 +38,7 @@ if __name__ == "__main__":
     # Get image diemensions
     src_height, src_width = src_img.shape[:2]
 
-    # Calculate deform, TODO: remove the static output width
-    out_width = 3060
+    out_width = 2700  # TODO: dynamic output widths
     abs_corr = np.zeros(out_width)
     edge_angle = angular_correction(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE)
     for x in range(0, src_width):
