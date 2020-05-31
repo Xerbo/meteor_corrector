@@ -7,10 +7,11 @@ import numpy as np
 import cv2
 from scipy.interpolate import interp1d
 
-# Satellite paramaters, in kilometres
+# Satellite paramaters
 EARTH_RADIUS = 6371
 SAT_HEIGHT = 820
-SWATH = 3050  # TODO: why does 2800km not work properly?
+VIEW_DEG = 105
+SWATH = 2800 / (VIEW_DEG * (pi/360))  # "If it’s Stupid but Works, it Ain’t Stupid"
 
 
 VIEW_ANGLE = (SWATH / EARTH_RADIUS) * 2
@@ -38,9 +39,11 @@ if __name__ == "__main__":
     # Get image diemensions
     src_height, src_width = src_img.shape[:2]
 
-    out_width = 2700  # TODO: dynamic output widths
+    edge_angle = angular_correction(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE)  # Angle at edge of image
+    correction_factor = angular_correction(EARTH_RADIUS, SAT_HEIGHT, 0.001)/0.001  # Change at nadir of image
+    out_width = int((edge_angle/correction_factor) * src_width)
+    
     abs_corr = np.zeros(out_width)
-    edge_angle = angular_correction(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE)
     for x in range(0, src_width):
         angle = (x/src_width * 2 - 1) * VIEW_ANGLE
         earth_angle = angular_correction(EARTH_RADIUS, SAT_HEIGHT, angle)
