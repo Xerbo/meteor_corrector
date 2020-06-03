@@ -5,25 +5,30 @@ from os.path import basename, splitext
 from math import *
 import numpy as np
 import cv2
-from scipy.interpolate import interp1d
 
 # Satellite paramaters
 EARTH_RADIUS = 6371
 SAT_HEIGHT = 820
 VIEW_DEG = 105
-SWATH = 2800 / (VIEW_DEG * (pi/360))  # "If it’s Stupid but Works, it Ain’t Stupid"
+SWATH = 2800 / (VIEW_DEG * (pi/360))  # "If it's Stupid but Works, it Ain't Stupid"
+VIEW_ANGLE = SWATH / EARTH_RADIUS
 
 
-VIEW_ANGLE = (SWATH / EARTH_RADIUS) * 2
-
-
-def angular_correction(radius, height, angle):
+def sat2earth_angle(radius, height, angle):
     '''
     Convert from the viewing angle from a point at (height) above a
     circle to internal angle from the center of the circle.
     See http://ceeserver.cee.cornell.edu/wdp2/cee6150/monograph/615_04_geomcorrect_rev01.pdf page 4.
     '''
     return asin((radius+height)/radius * sin(angle)) - angle
+
+
+def earth2sat_angle(radius, height, angle):
+    '''
+    Oppsite of `sat2earth_angle`, convert from a internal angle
+    of a circle to the viewing angle of a point at (height).
+    '''
+    return -atan(sin(angle)*radius / (cos(angle)*radius - (radius+height)))
 
 
 if __name__ == "__main__":
@@ -36,25 +41,25 @@ if __name__ == "__main__":
     # Load the image
     src_img = cv2.imread(sys.argv[1])
 
+    # Gracefully handle a non-existent file
+    if src_img is None:
+        raise FileNotFoundError("Could not open image")
+
     # Get image diemensions
     src_height, src_width = src_img.shape[:2]
 
-    edge_angle = angular_correction(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE)  # Angle at edge of image
-    correction_factor = angular_correction(EARTH_RADIUS, SAT_HEIGHT, 0.001)/0.001  # Change at nadir of image
+    # Calculate output size
+    edge_angle = sat2earth_angle(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE*2)  # Angle at edge of image
+    correction_factor = sat2earth_angle(EARTH_RADIUS, SAT_HEIGHT, 0.001)/0.001  # Change at nadir of image
     out_width = int((edge_angle/correction_factor) * src_width)
-    
-    abs_corr = np.zeros(out_width)
-    for x in range(0, src_width):
-        angle = (x/src_width * 2 - 1) * VIEW_ANGLE
-        earth_angle = angular_correction(EARTH_RADIUS, SAT_HEIGHT, angle)
-        out_x = (earth_angle/edge_angle + 1)/2 * out_width
-        abs_corr[int(out_x)] = x
 
-    # Interpolate blank values
-    x = np.arange(out_width)
-    idx = np.nonzero(abs_corr)
-    interp = interp1d(x[idx], abs_corr[idx], fill_value="extrapolate")
-    abs_corr = interp(x)
+    sat_edge = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE/2)
+
+    abs_corr = np.zeros(out_width)
+    for x in range(out_width):
+        angle = ((x/out_width)-0.5)*VIEW_ANGLE
+        angle = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, angle)
+        abs_corr[x] = (angle/sat_edge + 1)/2 * (src_width-1)
 
     # Deform mesh
     xs, ys = np.meshgrid(
