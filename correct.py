@@ -9,8 +9,7 @@ import cv2
 # Satellite paramaters
 EARTH_RADIUS = 6371
 SAT_HEIGHT = 820
-VIEW_DEG = 105
-SWATH = 2800 / (VIEW_DEG * (pi/360))  # "If it's Stupid but Works, it Ain't Stupid"
+SWATH = 2800
 VIEW_ANGLE = SWATH / EARTH_RADIUS
 
 
@@ -32,9 +31,16 @@ def earth2sat_angle(radius, height, angle):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: {} <input file>".format(sys.argv[0]))
+    if len(sys.argv) < 2:
+        print("Usage: {} <input file> *swath *altitude\nArguemts lead by \"*\" are optional.".format(sys.argv[0]))
         sys.exit(1)
+
+    if len(sys.argv) >= 3:
+        SWATH = int(sys.argv[2])
+        VIEW_ANGLE = SWATH / EARTH_RADIUS
+
+    if len(sys.argv) >= 4:
+        SAT_HEIGHT = int(sys.argv[3])
 
     out_fname = "{}-corrected.png".format(splitext(basename(sys.argv[1]))[0])
 
@@ -59,7 +65,7 @@ if __name__ == "__main__":
     for x in range(out_width):
         angle = ((x/out_width)-0.5)*VIEW_ANGLE
         angle = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, angle)
-        abs_corr[x] = (angle/sat_edge + 1)/2 * (src_width-1)
+        abs_corr[x] = (angle/sat_edge + 1)/2 * src_width
 
     # Deform mesh
     xs, ys = np.meshgrid(
