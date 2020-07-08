@@ -1,16 +1,13 @@
 #!/usr/bin/python3
-import re
 import sys
-from os.path import basename, splitext
+import argparse
+from os.path import basename, dirname, splitext
 from math import *
 import numpy as np
 import cv2
 
-# Satellite paramaters
+
 EARTH_RADIUS = 6371
-SAT_HEIGHT = 820
-SWATH = 2800
-VIEW_ANGLE = SWATH / EARTH_RADIUS
 
 
 def sat2earth_angle(radius, height, angle):
@@ -31,21 +28,31 @@ def earth2sat_angle(radius, height, angle):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: {} <input file> *swath *altitude\nArguemts lead by \"*\" are optional.".format(sys.argv[0]))
-        sys.exit(1)
+    # Parse arguments
+    parser = argparse.ArgumentParser(prog='meteor_corrector',
+                                     description='Correct the warp at the edges of images from Meteor-M2 satellite (and alike)')
 
-    if len(sys.argv) >= 3:
-        SWATH = int(sys.argv[2])
-        VIEW_ANGLE = SWATH / EARTH_RADIUS
+    parser.add_argument('filename', metavar='INPUT', type=str,
+                        help='path to the input image')
+    parser.add_argument('-s', '--swath', dest='swath', type=int, default=2800,
+                        help='swath of the satellite (in km)')
+    parser.add_argument('-a', '--altitude', dest='altitude', type=int, default=820,
+                        help='altitude of the satellite (in km)')
+    parser.add_argument('-o', '--output', dest='output', type=str,
+                        help='path of the output image')
 
-    if len(sys.argv) >= 4:
-        SAT_HEIGHT = int(sys.argv[3])
+    args = parser.parse_args()
 
-    out_fname = "{}-corrected.png".format(splitext(basename(sys.argv[1]))[0])
+    if args.filename is None:
+        parser.print_help()
+
+    if args.output is None:
+        out_fname = "{}/{}-corrected.png".format(dirname(sys.argv[1]), splitext(basename(sys.argv[1]))[0])
+    else:
+        out_fname = args.output
 
     # Load the image
-    src_img = cv2.imread(sys.argv[1])
+    src_img = cv2.imread(args.filename)
 
     # Gracefully handle a non-existent file
     if src_img is None:
@@ -54,16 +61,18 @@ if __name__ == "__main__":
     # Get image diemensions
     src_height, src_width = src_img.shape[:2]
 
-    # Calculate output size
-    correction_factor = sat2earth_angle(EARTH_RADIUS, SAT_HEIGHT, 0.001)/0.001  # Change at nadir of image
+    # Calculate viewing angle
+    VIEW_ANGLE = args.swath / EARTH_RADIUS
+
+    # Estimate output size
+    correction_factor = sat2earth_angle(EARTH_RADIUS, args.altitude, 0.001)/0.001  # Change at nadir of image
     out_width = int((VIEW_ANGLE/correction_factor) * src_width/2)
 
-    sat_edge = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE/2)
-
+    sat_edge = earth2sat_angle(EARTH_RADIUS, args.altitude, VIEW_ANGLE/2)
     abs_corr = np.zeros(out_width)
     for x in range(out_width):
         angle = ((x/out_width)-0.5)*VIEW_ANGLE
-        angle = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, angle)
+        angle = earth2sat_angle(EARTH_RADIUS, args.altitude, angle)
         abs_corr[x] = (angle/sat_edge + 1)/2 * (src_width-2) + 1
 
     # Deform mesh
@@ -72,7 +81,7 @@ if __name__ == "__main__":
         np.arange(src_height, dtype=np.float32)
     )
 
-    # Remap the image, with lanczos4 introplation
+    # Remap the image, with cubic introplation
     out_img = cv2.remap(src_img, xs, ys, cv2.INTER_CUBIC)
 
     # Sharpen
