@@ -1,25 +1,20 @@
-# Meteor-M Geometry Corrector
+# Meteor-M2 Geometry Corrector
 
-While intended for Meteor-M satellites it will also work with any other weather satellite in polar orbit.
+`meteor_corrector` is a tool for correcting the warp at the edges of images from Meteor-M2 satellite (and alike) written in python3.
 
-***
-
-`meteor_corrector` is a tool for removing the warp on the edges of images from Meteor-M satellites (and alike) written in python3.
-
-Since it uses opencv it can be incredibly fast while maintaining readability and quality.
+It uses OpenCV for image transforms meaning that it can typically process an image in under 2 seconds.
 
 ## Requirements
 
-All requirements can be installed easily with pip (depending on your system it may be `pip3`):
+All requirements can be installed easily through pip (it will most likely be `pip3` under Linux):
 
 ```
 pip install numpy opencv-python
 ```
 
-## Running
+## Usage
 
-Depending on your system it may be `python3`.
-
+Simply run with (it will most likely be `python3` under Linux):
 ```
 python correct.py image.png
 ```

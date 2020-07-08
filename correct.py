@@ -55,9 +55,8 @@ if __name__ == "__main__":
     src_height, src_width = src_img.shape[:2]
 
     # Calculate output size
-    edge_angle = sat2earth_angle(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE*2)  # Angle at edge of image
     correction_factor = sat2earth_angle(EARTH_RADIUS, SAT_HEIGHT, 0.001)/0.001  # Change at nadir of image
-    out_width = int((edge_angle/correction_factor) * src_width)
+    out_width = int((VIEW_ANGLE/correction_factor) * src_width/2)
 
     sat_edge = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, VIEW_ANGLE/2)
 
@@ -65,7 +64,7 @@ if __name__ == "__main__":
     for x in range(out_width):
         angle = ((x/out_width)-0.5)*VIEW_ANGLE
         angle = earth2sat_angle(EARTH_RADIUS, SAT_HEIGHT, angle)
-        abs_corr[x] = (angle/sat_edge + 1)/2 * src_width
+        abs_corr[x] = (angle/sat_edge + 1)/2 * (src_width-2) + 1
 
     # Deform mesh
     xs, ys = np.meshgrid(
@@ -74,11 +73,11 @@ if __name__ == "__main__":
     )
 
     # Remap the image, with lanczos4 introplation
-    out_img = cv2.remap(src_img, xs, ys, cv2.INTER_LANCZOS4)
+    out_img = cv2.remap(src_img, xs, ys, cv2.INTER_CUBIC)
 
     # Sharpen
     amount = 0.3
-    radius = 5
+    radius = 3
     out_img = cv2.addWeighted(out_img, amount+1, cv2.GaussianBlur(out_img, (0, 0), radius), -amount, 0)
 
     # Write image
