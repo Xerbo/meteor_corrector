@@ -27,7 +27,7 @@ def earth2sat_angle(radius, height, angle):
     return -atan(sin(angle)*radius / (cos(angle)*radius - (radius+height)))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Parse arguments
     parser = argparse.ArgumentParser(prog='meteor_corrector',
                                      description='Correct the warp at the edges of images from Meteor-M2 satellite (and alike)')
@@ -47,7 +47,11 @@ if __name__ == "__main__":
         parser.print_help()
 
     if args.output is None:
-        out_fname = "{}/{}-corrected.png".format(dirname(sys.argv[1]), splitext(basename(sys.argv[1]))[0])
+        out_fname = '{}{}{}-corrected.png'.format(
+            dirname(sys.argv[1]),
+            '' if dirname(sys.argv[1]) == '' else '/',
+            splitext(basename(sys.argv[1]))[0]
+        )
     else:
         out_fname = args.output
 
@@ -56,7 +60,7 @@ if __name__ == "__main__":
 
     # Gracefully handle a non-existent file
     if src_img is None:
-        raise FileNotFoundError("Could not open image")
+        raise FileNotFoundError('Could not open image')
 
     # Get image diemensions
     src_height, src_width = src_img.shape[:2]
