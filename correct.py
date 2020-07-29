@@ -48,9 +48,9 @@ if __name__ == '__main__':
 
     if args.output is None:
         out_fname = '{}{}{}-corrected.png'.format(
-            dirname(sys.argv[1]),
-            '' if dirname(sys.argv[1]) == '' else '/',
-            splitext(basename(sys.argv[1]))[0]
+            dirname(args.filename),
+            '' if dirname(args.filename) == '' else '/',
+            splitext(basename(args.filename))[0]
         )
     else:
         out_fname = args.output
