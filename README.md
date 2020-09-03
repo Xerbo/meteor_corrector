@@ -17,6 +17,7 @@ pip3 install numpy opencv-python-headless
 However if you are on ARM (eg Raspberry Pi's), you will have to install OpenCV through apt:
 
 ```
+pip3 install numpy
 sudo apt install python3-opencv
 ```
 
