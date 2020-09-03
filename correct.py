@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='meteor_corrector',
                                      description='Correct the warp at the edges of images from Meteor-M2 satellite (and alike)')
 
-    parser.add_argument('filename', metavar='INPUT', type=str,
+    parser.add_argument('filename', metavar='FILE', type=str,
                         help='path to the input image')
     parser.add_argument('-s', '--swath', dest='swath', type=int, default=2800,
                         help='swath of the satellite (in km)')
@@ -40,12 +40,15 @@ if __name__ == '__main__':
                         help='altitude of the satellite (in km)')
     parser.add_argument('-o', '--output', dest='output', type=str,
                         help='path of the output image')
+    parser.add_argument('-f', '--flip', dest='flip', action='store_true',
+                        help='Flip the image, for northbound passes')
 
     args = parser.parse_args()
 
     if args.filename is None:
         parser.print_help()
 
+    # This hurts my soul
     if args.output is None:
         out_fname = '{}{}{}-corrected.png'.format(
             dirname(args.filename),
@@ -92,6 +95,9 @@ if __name__ == '__main__':
     amount = 0.3
     radius = 3
     out_img = cv2.addWeighted(out_img, amount+1, cv2.GaussianBlur(out_img, (0, 0), radius), -amount, 0)
+
+    if args.flip:
+        out_img = cv2.rotate(out_img, cv2.ROTATE_180)
 
     # Write image
     cv2.imwrite(out_fname, out_img)
