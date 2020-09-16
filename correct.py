@@ -7,7 +7,8 @@ import numpy as np
 import cv2
 
 
-EARTH_RADIUS = 6371
+#	R⊕ =   6.3781×10^6 m
+EARTH_RADIUS = 6378
 
 
 def sat2earth_angle(radius, height, angle):
