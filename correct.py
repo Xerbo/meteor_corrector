@@ -21,27 +21,29 @@ def sat2earth_angle(radius, height, angle):
 
 def earth2sat_angle(radius, height, angle):
     '''
-    Oppsite of `sat2earth_angle`, convert from a internal angle
+    Opposite of `sat2earth_angle`, convert from a internal angle
     of a circle to the viewing angle of a point at (height).
     '''
     return -atan(sin(angle)*radius / (cos(angle)*radius - (radius+height)))
 
 
-if __name__ == '__main__':
+def main():
     # Parse arguments
-    parser = argparse.ArgumentParser(prog='meteor_corrector',
-                                     description='Correct the warp at the edges of images from Meteor-M2 satellite (and alike)')
+    parser = argparse.ArgumentParser(
+        prog='meteor_corrector',
+        description='Correct the warp at the edges of images from Meteor-M2 satellite (and alike)'
+    )
 
-    parser.add_argument('filename', metavar='FILE', type=str,
+    parser.add_argument('filename', metavar='input image', type=str,
                         help='path to the input image')
-    parser.add_argument('-s', '--swath', dest='swath', type=int, default=2800,
+    parser.add_argument('-s', '--swath', metavar='swath', dest='swath', type=int, default=2800,
                         help='swath of the satellite (in km)')
-    parser.add_argument('-a', '--altitude', dest='altitude', type=int, default=820,
+    parser.add_argument('-a', '--altitude', metavar='altitude', dest='altitude', type=int, default=820,
                         help='altitude of the satellite (in km)')
-    parser.add_argument('-o', '--output', dest='output', type=str,
-                        help='path of the output image')
+    parser.add_argument('-o', '--output', metavar='path', dest='output', type=str,
+                        help='path of the corrected image')
     parser.add_argument('-f', '--flip', dest='flip', action='store_true',
-                        help='Flip the image, for northbound passes')
+                        help='flip the image, for northbound passes')
 
     args = parser.parse_args()
 
@@ -101,3 +103,7 @@ if __name__ == '__main__':
 
     # Write image
     cv2.imwrite(out_fname, out_img)
+
+
+if __name__ == '__main__':
+    main()

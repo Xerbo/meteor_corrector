@@ -24,22 +24,22 @@ sudo apt install python3-opencv
 ## Usage
 
 ```
-usage: meteor_corrector [-h] [-s SWATH] [-a ALTITUDE] [-o OUTPUT] [-f] FILE
+usage: meteor_corrector [-h] [-s swath] [-a altitude] [-o path] [-f] input image
 
 Correct the warp at the edges of images from Meteor-M2 satellite (and alike)
 
 positional arguments:
-  FILE                  path to the input image
+  input image           path to the input image
 
 optional arguments:
   -h, --help            show this help message and exit
-  -s SWATH, --swath SWATH
+  -s swath, --swath swath
                         swath of the satellite (in km)
-  -a ALTITUDE, --altitude ALTITUDE
+  -a altitude, --altitude altitude
                         altitude of the satellite (in km)
-  -o OUTPUT, --output OUTPUT
-                        path of the output image
-  -f, --flip            Flip the image, for northbound passe
+  -o path, --output path
+                        path of the corrected image
+  -f, --flip            flip the image, for northbound passes
 ```
 
 ### Examples
