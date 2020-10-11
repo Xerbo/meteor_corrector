@@ -61,7 +61,7 @@ def main():
         out_fname = args.output
 
     # Load the image
-    src_img = cv2.imread(args.filename)
+    src_img = cv2.imread(args.filename, cv2.IMREAD_UNCHANGED)
 
     # Gracefully handle a non-existent file
     if src_img is None:
