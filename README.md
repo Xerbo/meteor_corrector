@@ -2,7 +2,10 @@
 
 `meteor_corrector` is a tool for correcting the warp at the edges of images from Meteor-M2 satellite (and alike) written in python3.
 
-It uses OpenCV for image transforms meaning that it can typically process an image in under 2 seconds.
+Utilizing OpenCV for image transformations means that `meteor_corrector` is normally incredibly fast.
+
+**NOTE**: `meteor_corrector` assumes pixels at the zenith are 1:1, which is only true for Meteor, images from other satellites will be stretched.
+The vertical resolution (`-r`/`--resolution`) flag can be used to manually override this assumption.
 
 ## Requirements
 
@@ -24,21 +27,23 @@ sudo apt install python3-opencv
 ## Usage
 
 ```
-usage: meteor_corrector [-h] [-s swath] [-a altitude] [-o path] [-f] input image
+usage: meteor_corrector [-h] [-s SWATH] [-a ALTITUDE] [-o OUTPUT] [-r RESOLUTION] [-f] filename
 
 Correct the warp at the edges of images from Meteor-M2 satellite (and alike)
 
 positional arguments:
-  input image           path to the input image
+  filename              path to the input image
 
 optional arguments:
   -h, --help            show this help message and exit
-  -s swath, --swath swath
+  -s SWATH, --swath SWATH
                         swath of the satellite (in km)
-  -a altitude, --altitude altitude
+  -a ALTITUDE, --altitude ALTITUDE
                         altitude of the satellite (in km)
-  -o path, --output path
+  -o OUTPUT, --output OUTPUT
                         path of the corrected image
+  -r RESOLUTION, --resolution RESOLUTION
+                        vertical resolution of the input image in km/px
   -f, --flip            flip the image, for northbound passes
 ```
 
@@ -57,11 +62,10 @@ python3 correct.py -o corrected_image.png LRPT_2020_07_09-10_47.png
 Manually specify the output filename
 
 ```
-python3 correct.py -a 870 -s 2800 HRPT_N19_20200708_113834.png
+python3 correct.py -a 870 -s 2800 -r 1 HRPT_N19_20200708_113834.png
 ```
 
 Correct a NOAA 19 HRPT image (NOAA 19 has altitude of 870km, and swath of 2800km)
-
 
 ## License
 

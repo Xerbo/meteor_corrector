@@ -5,6 +5,7 @@ from os.path import basename, dirname, splitext
 from math import *
 import numpy as np
 import cv2
+import re
 
 
 EARTH_RADIUS = 6371
@@ -14,7 +15,7 @@ def sat2earth_angle(radius, height, angle):
     '''
     Convert from the viewing angle from a point at (height) above a
     circle to internal angle from the center of the circle.
-    See http://ceeserver.cee.cornell.edu/wdp2/cee6150/monograph/615_04_geomcorrect_rev01.pdf page 4.
+    See https://web.archive.org/web/20200110090856/http://ceeserver.cee.cornell.edu/wdp2/cee6150/monograph/615_04_geomcorrect_rev01.pdf page 4.
     '''
     return asin((radius+height)/radius * sin(angle)) - angle
 
@@ -34,14 +35,16 @@ def main():
         description='Correct the warp at the edges of images from Meteor-M2 satellite (and alike)'
     )
 
-    parser.add_argument('filename', metavar='input image', type=str,
+    parser.add_argument('filename', type=str,
                         help='path to the input image')
-    parser.add_argument('-s', '--swath', metavar='swath', dest='swath', type=int, default=2800,
+    parser.add_argument('-s', '--swath', dest='swath', type=int, default=2800,
                         help='swath of the satellite (in km)')
-    parser.add_argument('-a', '--altitude', metavar='altitude', dest='altitude', type=int, default=820,
+    parser.add_argument('-a', '--altitude', dest='altitude', type=int, default=820,
                         help='altitude of the satellite (in km)')
-    parser.add_argument('-o', '--output', metavar='path', dest='output', type=str,
+    parser.add_argument('-o', '--output', dest='output', type=str,
                         help='path of the corrected image')
+    parser.add_argument('-r', '--resolution', dest='resolution', type=float,
+                        help='vertical resolution of the input image in km/px')
     parser.add_argument('-f', '--flip', dest='flip', action='store_true',
                         help='flip the image, for northbound passes')
 
@@ -50,13 +53,8 @@ def main():
     if args.filename is None:
         parser.print_help()
 
-    # This hurts my soul
     if args.output is None:
-        out_fname = '{}{}{}-corrected.png'.format(
-            dirname(args.filename),
-            '' if dirname(args.filename) == '' else '/',
-            splitext(basename(args.filename))[0]
-        )
+        out_fname = re.sub("\..*$", "-corrected.png", args.filename)
     else:
         out_fname = args.output
 
@@ -74,23 +72,26 @@ def main():
     VIEW_ANGLE = args.swath / EARTH_RADIUS
 
     # Estimate output size
-    correction_factor = sat2earth_angle(EARTH_RADIUS, args.altitude, 0.001)/0.001  # Change at nadir of image
-    out_width = int((VIEW_ANGLE/correction_factor) * src_width/2)
+    if args.resolution is None:
+        correction_factor = sat2earth_angle(EARTH_RADIUS, args.altitude, 0.001)/0.001  # Change at nadir of image
+        out_width = int((VIEW_ANGLE/correction_factor) * src_width/2)
+    else:
+        out_width = int(args.swath/args.resolution)
 
     sat_edge = earth2sat_angle(EARTH_RADIUS, args.altitude, VIEW_ANGLE/2)
     abs_corr = np.zeros(out_width)
     for x in range(out_width):
         angle = ((x/out_width)-0.5)*VIEW_ANGLE
         angle = earth2sat_angle(EARTH_RADIUS, args.altitude, angle)
-        abs_corr[x] = (angle/sat_edge + 1)/2 * (src_width-2) + 1
+        abs_corr[x] = (angle/sat_edge + 1)/2 * src_width
 
-    # Deform mesh
+    # Create a deform mesh for cv2.remap
     xs, ys = np.meshgrid(
         np.full(out_width, abs_corr, dtype=np.float32),
         np.arange(src_height, dtype=np.float32)
     )
 
-    # Remap the image, with cubic introplation
+    # Correct the image
     out_img = cv2.remap(src_img, xs, ys, cv2.INTER_CUBIC)
 
     # Sharpen
